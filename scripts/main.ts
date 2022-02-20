@@ -6,7 +6,10 @@ var pxSize: number = 8;
 
 canvas.width = Math.floor(window.innerWidth / pxSize) * pxSize;
 canvas.height = Math.floor(window.innerHeight / pxSize) * pxSize;
-console.log(canvas.width, canvas.height);
+
+const width = canvas.width/pxSize;
+const height = canvas.height/pxSize;
+console.log(width, height);
 
 const shaderLocation = "../shaders/";
 
@@ -53,16 +56,36 @@ function initProgram(gl: WebGL2RenderingContext, vertexShaderSource: string, fra
 }
 
 function getRandomBitArray(size: number) {
-	return Array.from({ length: size }, () => Math.floor(Number(Math.random() > 0.5)) * 255);
+	return Array.from({ length: size }, () => (Number(Math.random()) * 255));
 }
 
-//-----------------
+//Debug-----------------
+function getTextureData(tex:WebGLTexture)
+{
+	var GL = gl!;
+	var fb = GL.createFramebuffer();
+        GL.bindFramebuffer(GL.FRAMEBUFFER, fb);
+
+        GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, tex, 0);
+	var pixels = new Uint8Array(width * height * 4);
+        if (GL.checkFramebufferStatus(GL.FRAMEBUFFER) == GL.FRAMEBUFFER_COMPLETE) {
+                GL.readPixels(0, 0, width, height, GL.RGBA, GL.UNSIGNED_BYTE, pixels);
+		console.log(pixels);
+		console.log(pixels.filter((value, index, self) => self.indexOf(value) === index))
+
+        }
+	GL.deleteFramebuffer(fb);
+
+	return pixels;
+}
+
+//----------------
 
 
 function main(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentShaderSource: string) {
 	var program = initProgram(gl, vertexShaderSource, fragmentShaderSource);
 	gl.useProgram(program);
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+	gl.viewport(0, 0, width, height);
 
 	var vao = gl.createVertexArray()!;
 	gl.bindVertexArray(vao);
@@ -98,10 +121,7 @@ function main(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentSh
 
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
-		// const texture_data = Array.from({length: *canvas.height}, () => Math.floor(Math.random() * 255));
-
-		// gl.texImage2D(gl.TEXTURE_2D,0,gl.R8, canvas.width,canvas.height,0,gl.RED,gl.UNSIGNED_BYTE,null);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, canvas.width, canvas.height, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array(getRandomBitArray(canvas.width * canvas.height)));
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array(getRandomBitArray(width * height)));
 
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -113,14 +133,14 @@ function main(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentSh
 	//Pixel size setup
 	const pxSizeLocation = gl.getUniformLocation(program, "u_px_size");
 	{
-		gl.uniform1i(pxSizeLocation, pxSize);
+		gl.uniform1i(pxSizeLocation, 1);
 	}
 
 	//Target Texture Setup (null)
 	var targetTexture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D,targetTexture);
 	{
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, canvas.width, canvas.height, 0, gl.RED, gl.UNSIGNED_BYTE, null);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, null);
 
 		// set the filtering so we don't need mips
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -143,14 +163,17 @@ function main(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentSh
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 	gl.bindVertexArray(vao);
-
-
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 	gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 
-	gl.bindTexture(gl.TEXTURE_2D,targetTexture);
-	gl.uniform1i(pxSizeLocation, 1);
+	//TODO: for computations keep viewport as just width and height but for showing output update viewport size to canvas.width && canvas.height
+	//TODO: Make another program which doesnt do any computations but just shows the output (will need to be scaled) and also viewport size will need to be changed to full size
+	gl.viewport(0, 0, canvas.width, canvas.height);
+	
+	gl.bindTexture(gl.TEXTURE_2D,texture);	
+	gl.uniform1i(pxSizeLocation, 8);
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
+	console.log(getTextureData(targetTexture!)==getTextureData(texture!));
 }
 
 if (gl) {
