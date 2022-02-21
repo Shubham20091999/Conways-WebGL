@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 //Configurations-----
 var canvas = document.querySelector("#main");
 const gl = canvas.getContext("webgl2");
@@ -18,17 +9,13 @@ const width = canvas.width / pxSize;
 const height = canvas.height / pxSize;
 console.log(width, height);
 const shaderLocation = "../shaders/";
-function getShaders() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const vertexResponse = yield fetch(shaderLocation + "vert.vs");
-        const fragmentResponse = yield fetch(shaderLocation + "frag.fs");
-        const displayFragmentResponse = yield fetch(shaderLocation + "displayFrag.fs");
-        return {
-            vs: yield vertexResponse.text(),
-            fs: yield fragmentResponse.text(),
-            dfs: yield displayFragmentResponse.text(),
-        };
-    });
+async function getShaders(baseLocation, list) {
+    let ret = Object();
+    for (const [key, value] of Object.entries(list)) {
+        const response = await fetch(baseLocation + value);
+        ret[key] = await response.text();
+    }
+    return ret;
 }
 function initProgram(gl, vertexShaderSource, fragmentShaderSource) {
     function createShader(gl, type, source) {
@@ -161,9 +148,13 @@ function main(gl, program, displayProgram) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 if (gl) {
-    getShaders().then(ret => {
-        var program = initProgram(gl, ret.vs, ret.fs);
-        var displayProgram = initProgram(gl, ret.vs, ret.dfs);
+    getShaders(shaderLocation, {
+        vertex: "vert.vs",
+        computeFrag: "frag.fs",
+        displayFrag: "displayFrag.fs"
+    }).then(ret => {
+        var program = initProgram(gl, ret.vertex, ret.computeFrag);
+        var displayProgram = initProgram(gl, ret.vertex, ret.displayFrag);
         main(gl, program, displayProgram);
     });
 }

@@ -7,22 +7,21 @@ var pxSize: number = 260;
 canvas.width = Math.floor(window.innerWidth / pxSize) * pxSize;
 canvas.height = Math.floor(window.innerHeight / pxSize) * pxSize;
 
-const width = canvas.width/pxSize;
-const height = canvas.height/pxSize;
+const width = canvas.width / pxSize;
+const height = canvas.height / pxSize;
 console.log(width, height);
 
 const shaderLocation = "../shaders/";
 
-async function getShaders() {
-	const vertexResponse = await fetch(shaderLocation + "vert.vs");
-	const fragmentResponse = await fetch(shaderLocation + "frag.fs");
-	const displayFragmentResponse = await fetch(shaderLocation + "displayFrag.fs");
-	return {
-		vs: await vertexResponse.text(),
-		fs: await fragmentResponse.text(),
-		dfs: await displayFragmentResponse.text(),
-	};
+async function getShaders(baseLocation: string, list: Object) {
+	let ret = Object();
+	for (const [key, value] of Object.entries(list)) {
+		const response = await fetch(baseLocation + value);
+		ret[key] = await response.text();
+	}
+	return ret;
 }
+
 
 function initProgram(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentShaderSource: string) {
 	function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
@@ -57,24 +56,23 @@ function initProgram(gl: WebGL2RenderingContext, vertexShaderSource: string, fra
 }
 
 function getRandomBitArray(size: number) {
-	return Array.from({ length: size }, () => (Number(Math.random()>0.5) * 255));
+	return Array.from({ length: size }, () => (Number(Math.random() > 0.5) * 255));
 }
 
 //Debug-----------------
-function getTextureData(tex:WebGLTexture)
-{
+function getTextureData(tex: WebGLTexture) {
 	var GL = gl!;
 	var fb = GL.createFramebuffer();
-        GL.bindFramebuffer(GL.FRAMEBUFFER, fb);
+	GL.bindFramebuffer(GL.FRAMEBUFFER, fb);
 
-        GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, tex, 0);
+	GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, tex, 0);
 	var pixels = new Uint8Array(width * height * 4);
-        if (GL.checkFramebufferStatus(GL.FRAMEBUFFER) == GL.FRAMEBUFFER_COMPLETE) {
-                GL.readPixels(0, 0, width, height, GL.RGBA, GL.UNSIGNED_BYTE, pixels);
+	if (GL.checkFramebufferStatus(GL.FRAMEBUFFER) == GL.FRAMEBUFFER_COMPLETE) {
+		GL.readPixels(0, 0, width, height, GL.RGBA, GL.UNSIGNED_BYTE, pixels);
 		console.log(pixels);
 		console.log(pixels.filter((value, index, self) => self.indexOf(value) === index))
 
-        }
+	}
 	GL.deleteFramebuffer(fb);
 
 	return pixels;
@@ -115,7 +113,7 @@ function main(gl: WebGL2RenderingContext, program: WebGLProgram, displayProgram:
 
 	//Texture Data Setup
 	const textureLocation = gl.getUniformLocation(program, "u_texture");
-	const textureLocation_display = gl.getUniformLocation(displayProgram,"u_texture");
+	const textureLocation_display = gl.getUniformLocation(displayProgram, "u_texture");
 	var texture = gl.createTexture();
 	{
 		gl.activeTexture(gl.TEXTURE0 + 0);
@@ -125,7 +123,7 @@ function main(gl: WebGL2RenderingContext, program: WebGLProgram, displayProgram:
 
 
 		// gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array(getRandomBitArray(width * height)));
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array([0, 16 ,32 ,48,64, 80 ,96 ,112,128, 144 ,160 ,176,192, 208 ,224 ,240,256, 272 ]));
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array([0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256, 272]));
 
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -136,21 +134,21 @@ function main(gl: WebGL2RenderingContext, program: WebGLProgram, displayProgram:
 
 	//Pixel size setup
 	const pxSizeLocation = gl.getUniformLocation(program, "u_px_size");
-	const pxSizeLocation_display = gl.getUniformLocation(displayProgram,"u_px_size");
+	const pxSizeLocation_display = gl.getUniformLocation(displayProgram, "u_px_size");
 	{
 		gl.uniform1f(pxSizeLocation, 1);
 	}
 
 	//Size(width+height) setup
-	const sizeLocation = gl.getUniformLocation(program,"u_size");
+	const sizeLocation = gl.getUniformLocation(program, "u_size");
 	{
-		gl.uniform2f(sizeLocation,width,height);
+		gl.uniform2f(sizeLocation, width, height);
 	}
 
 	//Target Texture Setup (null)
 	var targetTexture = gl.createTexture();
 	{
-		gl.bindTexture(gl.TEXTURE_2D,targetTexture);
+		gl.bindTexture(gl.TEXTURE_2D, targetTexture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, null);
 
 		// set the filtering so we don't need mips
@@ -159,7 +157,7 @@ function main(gl: WebGL2RenderingContext, program: WebGLProgram, displayProgram:
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
-		gl.bindTexture(gl.TEXTURE_2D,texture);
+		gl.bindTexture(gl.TEXTURE_2D, texture);
 	}
 
 	//FrameBuffer setup
@@ -175,24 +173,30 @@ function main(gl: WebGL2RenderingContext, program: WebGLProgram, displayProgram:
 
 	gl.bindVertexArray(vao);
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
-	gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 	//TODO: Make another program which doesnt do any computations but just shows the output (will need to be scaled) and also viewport size will need to be changed to full size
 	//TODO: for computations keep viewport as just width and height but for showing output update viewport size to canvas.width && canvas.height
-	
+
 	gl.useProgram(displayProgram);
 	gl.viewport(0, 0, canvas.width, canvas.height);
-	gl.bindTexture(gl.TEXTURE_2D,targetTexture);	
-	gl.uniform1f(pxSizeLocation_display,pxSize);
-	gl.uniform1i(textureLocation_display,0);
+	gl.bindTexture(gl.TEXTURE_2D, targetTexture);
+	gl.uniform1f(pxSizeLocation_display, pxSize);
+	gl.uniform1i(textureLocation_display, 0);
 	// gl.uniform1f(pxSizeLocation, pxSize);
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
 if (gl) {
-	getShaders().then(ret => {
-		var program = initProgram(gl, ret.vs, ret.fs);
-		var displayProgram = initProgram(gl,ret.vs,ret.dfs);
+	getShaders(shaderLocation, {
+		vertex: "vert.vs",
+		computeFrag: "frag.fs",
+		displayFrag: "displayFrag.fs"
+	}).then(ret => {
+
+		var program = initProgram(gl, ret.vertex, ret.computeFrag);
+		var displayProgram = initProgram(gl, ret.vertex, ret.displayFrag);
+
 		main(gl, program, displayProgram);
 	})
 }
