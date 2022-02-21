@@ -16,10 +16,11 @@ const shaderLocation = "../shaders/";
 async function getShaders() {
 	const vertexResponse = await fetch(shaderLocation + "vert.vs");
 	const fragmentResponse = await fetch(shaderLocation + "frag.fs");
-
+	const displayFragmentResponse = await fetch(shaderLocation + "displayFrag.fs");
 	return {
 		vs: await vertexResponse.text(),
-		fs: await fragmentResponse.text()
+		fs: await fragmentResponse.text(),
+		dfs: await displayFragmentResponse.text(),
 	};
 }
 
@@ -82,8 +83,8 @@ function getTextureData(tex:WebGLTexture)
 //----------------
 
 
-function main(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentShaderSource: string) {
-	var program = initProgram(gl, vertexShaderSource, fragmentShaderSource);
+function main(gl: WebGL2RenderingContext, program: WebGLProgram, displayProgram: WebGLProgram) {
+
 	gl.useProgram(program);
 	gl.viewport(0, 0, width, height);
 
@@ -114,6 +115,7 @@ function main(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentSh
 
 	//Texture Data Setup
 	const textureLocation = gl.getUniformLocation(program, "u_texture");
+	const textureLocation_display = gl.getUniformLocation(displayProgram,"u_texture");
 	var texture = gl.createTexture();
 	{
 		gl.activeTexture(gl.TEXTURE0 + 0);
@@ -134,6 +136,7 @@ function main(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentSh
 
 	//Pixel size setup
 	const pxSizeLocation = gl.getUniformLocation(program, "u_px_size");
+	const pxSizeLocation_display = gl.getUniformLocation(displayProgram,"u_px_size");
 	{
 		gl.uniform1f(pxSizeLocation, 1);
 	}
@@ -177,17 +180,20 @@ function main(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentSh
 	//TODO: Make another program which doesnt do any computations but just shows the output (will need to be scaled) and also viewport size will need to be changed to full size
 	//TODO: for computations keep viewport as just width and height but for showing output update viewport size to canvas.width && canvas.height
 	
-	gl.bindTexture(gl.TEXTURE_2D,texture);	
-	
-	gl.uniform1f(pxSizeLocation, pxSize);
+	gl.useProgram(displayProgram);
 	gl.viewport(0, 0, canvas.width, canvas.height);
+	gl.bindTexture(gl.TEXTURE_2D,targetTexture);	
+	gl.uniform1f(pxSizeLocation_display,pxSize);
+	gl.uniform1i(textureLocation_display,0);
+	// gl.uniform1f(pxSizeLocation, pxSize);
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
-
 }
 
 if (gl) {
 	getShaders().then(ret => {
-		main(gl, ret.vs, ret.fs);
+		var program = initProgram(gl, ret.vs, ret.fs);
+		var displayProgram = initProgram(gl,ret.vs,ret.dfs);
+		main(gl, program, displayProgram);
 	})
 }
 else {
