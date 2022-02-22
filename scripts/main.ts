@@ -2,7 +2,7 @@
 var canvas = <HTMLCanvasElement>document.querySelector("#main");
 const gl = canvas.getContext("webgl2");
 
-const pxSize: number = 260;
+const pxSize: number = 8;
 
 canvas.width = Math.floor(window.innerWidth / pxSize) * pxSize;
 canvas.height = Math.floor(window.innerHeight / pxSize) * pxSize;
@@ -45,6 +45,7 @@ function main(gl: WebGL2RenderingContext, computeProgram: WebGLProgram, displayP
 	//Texture Data Setup
 	const textureLocation = gl.getUniformLocation(computeProgram, "u_texture");
 	const textureLocation_display = gl.getUniformLocation(displayProgram, "u_texture");
+
 	var texture = gl.createTexture();
 	{
 		gl.activeTexture(gl.TEXTURE0 + 0);
@@ -53,8 +54,8 @@ function main(gl: WebGL2RenderingContext, computeProgram: WebGLProgram, displayP
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
 
-		// gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array(getRandomBitArray(width * height)));
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array([0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256, 272]));
+		// gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, );
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, new Uint8Array(getRandomBitArray(width * height)));
 
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -103,8 +104,8 @@ function main(gl: WebGL2RenderingContext, computeProgram: WebGLProgram, displayP
 
 	var preTime = Number.NEGATIVE_INFINITY;
 	function drawScene(time: number) {
-		if ((time - preTime) / 1000 > 1) {
-
+		if ((time - preTime) / 1000 > 0.10)
+		 {
 			preTime = time;
 
 			//Computing next frame

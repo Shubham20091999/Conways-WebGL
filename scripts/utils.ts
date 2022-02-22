@@ -41,7 +41,7 @@ function initProgram(gl: WebGL2RenderingContext, vertexShaderSource: string, fra
 
 
 function getRandomBitArray(size: number) {
-	return Array.from({ length: size }, () => (Number(Math.random() > 0.5) * 255));
+	return Array.from({ length: size }, () => (Number(Math.random() > 0.90) * 255));
 }
 
 

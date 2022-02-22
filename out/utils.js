@@ -35,7 +35,7 @@ function initProgram(gl, vertexShaderSource, fragmentShaderSource) {
     throw "Program could not be initialized";
 }
 function getRandomBitArray(size) {
-    return Array.from({ length: size }, () => (Number(Math.random() > 0.5) * 255));
+    return Array.from({ length: size }, () => (Number(Math.random() > 0.90) * 255));
 }
 //Debug=========================
 function getTextureData(GL, texture) {
