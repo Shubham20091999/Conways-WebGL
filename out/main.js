@@ -12,14 +12,12 @@ const shaderLocation = "../shaders/";
 //---------------------------------
 function main(gl, computeProgram, displayProgram) {
     const canvas = gl.canvas;
-    gl.useProgram(computeProgram);
-    gl.viewport(0, 0, width, height);
     var vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
     //Vertex Buffer setup
+    const positionAttributeLocation = gl.getAttribLocation(computeProgram, "a_position");
+    var positionBuffer = gl.createBuffer();
     {
-        const positionAttributeLocation = gl.getAttribLocation(computeProgram, "a_position");
-        var positionBuffer = gl.createBuffer();
         gl.enableVertexAttribArray(positionAttributeLocation);
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
         var vertexCorrds2D = [
@@ -49,14 +47,6 @@ function main(gl, computeProgram, displayProgram) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-        gl.uniform1i(textureLocation, 0);
-    }
-    //Pixel size setup (for properscalling while displaying)
-    const pxSizeLocation_display = gl.getUniformLocation(displayProgram, "u_px_size");
-    //Size(width+height) setup (used for texture repeat on the edge of texture (check compute fragment shader for this))
-    const sizeLocation = gl.getUniformLocation(computeProgram, "u_size");
-    {
-        gl.uniform2f(sizeLocation, width, height);
     }
     //Compute Texture Setup (initialized to null)
     var computedTexture = gl.createTexture();
@@ -70,8 +60,24 @@ function main(gl, computeProgram, displayProgram) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
         gl.bindTexture(gl.TEXTURE_2D, texture);
     }
-    //FrameBuffer setup
+    //Pixel size setup (for properscalling while displaying)
+    const pxSizeLocation_display = gl.getUniformLocation(displayProgram, "u_px_size");
+    //Size(width+height) setup (used for texture repeat on the edge of texture (check compute fragment shader for this))
+    const sizeLocation = gl.getUniformLocation(computeProgram, "u_size");
     const frameBuffer = gl.createFramebuffer();
+    //Compute setup
+    gl.useProgram(computeProgram);
+    {
+        gl.uniform1i(textureLocation, 0);
+        gl.uniform2f(sizeLocation, width, height);
+    }
+    //Display setup
+    gl.useProgram(displayProgram);
+    {
+        gl.uniform1i(textureLocation_display, 0);
+        gl.uniform1f(pxSizeLocation_display, pxSize);
+    }
+    //FrameBuffer setup
     var preTime = Number.NEGATIVE_INFINITY;
     function drawScene(time) {
         if ((time - preTime) / 1000 > 1) {
@@ -86,7 +92,7 @@ function main(gl, computeProgram, displayProgram) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
                 //setting target texture as the output of frame buffer which will be used to render next frame
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, computedTexture, 0);
-                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                gl.clear(gl.COLOR_BUFFER_BIT);
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
                 //Target texture will be created after this
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -97,19 +103,14 @@ function main(gl, computeProgram, displayProgram) {
                 gl.useProgram(displayProgram);
                 //Viewport will be full sized
                 gl.viewport(0, 0, canvas.width, canvas.height);
-                //Binding Computed texture
-                gl.bindTexture(gl.TEXTURE_2D, computedTexture);
-                //Setting texture for display
-                gl.uniform1i(textureLocation_display, 0);
-                //Setting pixel size for proper scaling
-                gl.uniform1f(pxSizeLocation_display, pxSize);
-                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                gl.clear(gl.COLOR_BUFFER_BIT);
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
             }
             //Swap
             {
                 //swaping next frame with previous frame
                 [computedTexture, texture] = [texture, computedTexture];
+                gl.bindTexture(gl.TEXTURE_2D, texture);
             }
         }
         requestAnimationFrame(drawScene);
