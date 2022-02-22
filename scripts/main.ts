@@ -2,7 +2,7 @@
 var canvas = <HTMLCanvasElement>document.querySelector("#main");
 const gl = canvas.getContext("webgl2");
 
-const pxSize: number = 8;
+const pxSize: number = 6;
 
 canvas.width = Math.floor(window.innerWidth / pxSize) * pxSize;
 canvas.height = Math.floor(window.innerHeight / pxSize) * pxSize;

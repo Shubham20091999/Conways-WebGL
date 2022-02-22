@@ -2,7 +2,7 @@
 //Configurations-----------------
 var canvas = document.querySelector("#main");
 const gl = canvas.getContext("webgl2");
-const pxSize = 8;
+const pxSize = 6;
 canvas.width = Math.floor(window.innerWidth / pxSize) * pxSize;
 canvas.height = Math.floor(window.innerHeight / pxSize) * pxSize;
 const width = canvas.width / pxSize;
