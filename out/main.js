@@ -10,14 +10,15 @@ const height = canvas.height / pxSize;
 console.log(width, height);
 const shaderLocation = "../shaders/";
 //---------------------------------
-function main(gl, program, displayProgram) {
-    gl.useProgram(program);
+function main(gl, computeProgram, displayProgram) {
+    const canvas = gl.canvas;
+    gl.useProgram(computeProgram);
     gl.viewport(0, 0, width, height);
     var vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
     //Vertex Buffer setup
     {
-        const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+        const positionAttributeLocation = gl.getAttribLocation(computeProgram, "a_position");
         var positionBuffer = gl.createBuffer();
         gl.enableVertexAttribArray(positionAttributeLocation);
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -35,7 +36,7 @@ function main(gl, program, displayProgram) {
         gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
     }
     //Texture Data Setup
-    const textureLocation = gl.getUniformLocation(program, "u_texture");
+    const textureLocation = gl.getUniformLocation(computeProgram, "u_texture");
     const textureLocation_display = gl.getUniformLocation(displayProgram, "u_texture");
     var texture = gl.createTexture();
     {
@@ -50,21 +51,17 @@ function main(gl, program, displayProgram) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
         gl.uniform1i(textureLocation, 0);
     }
-    //Pixel size setup
-    const pxSizeLocation = gl.getUniformLocation(program, "u_px_size");
+    //Pixel size setup (for properscalling while displaying)
     const pxSizeLocation_display = gl.getUniformLocation(displayProgram, "u_px_size");
-    {
-        gl.uniform1f(pxSizeLocation, 1);
-    }
-    //Size(width+height) setup
-    const sizeLocation = gl.getUniformLocation(program, "u_size");
+    //Size(width+height) setup (used for texture repeat on the edge of texture (check compute fragment shader for this))
+    const sizeLocation = gl.getUniformLocation(computeProgram, "u_size");
     {
         gl.uniform2f(sizeLocation, width, height);
     }
-    //Target Texture Setup (null)
-    var targetTexture = gl.createTexture();
+    //Compute Texture Setup (initialized to null)
+    var computedTexture = gl.createTexture();
     {
-        gl.bindTexture(gl.TEXTURE_2D, targetTexture);
+        gl.bindTexture(gl.TEXTURE_2D, computedTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, null);
         // set the filtering so we don't need mips
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -75,29 +72,54 @@ function main(gl, program, displayProgram) {
     }
     //FrameBuffer setup
     const frameBuffer = gl.createFramebuffer();
-    {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-        // attach the texture as the first color attachment
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, targetTexture, 0);
+    var preTime = Number.NEGATIVE_INFINITY;
+    function drawScene(time) {
+        if ((time - preTime) / 1000 > 1) {
+            preTime = time;
+            //Computing next frame
+            {
+                //Use Compute program for computations
+                gl.useProgram(computeProgram);
+                //Viewport will be of small size for computations
+                gl.viewport(0, 0, width, height);
+                //Frame buffer to compute next frame
+                gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+                //setting target texture as the output of frame buffer which will be used to render next frame
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, computedTexture, 0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+                //Target texture will be created after this
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            }
+            //Display computed frame
+            {
+                //Using Display Program
+                gl.useProgram(displayProgram);
+                //Viewport will be full sized
+                gl.viewport(0, 0, canvas.width, canvas.height);
+                //Binding Computed texture
+                gl.bindTexture(gl.TEXTURE_2D, computedTexture);
+                //Setting texture for display
+                gl.uniform1i(textureLocation_display, 0);
+                //Setting pixel size for proper scaling
+                gl.uniform1f(pxSizeLocation_display, pxSize);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+            }
+            //Swap
+            {
+                //swaping next frame with previous frame
+                [computedTexture, texture] = [texture, computedTexture];
+            }
+        }
+        requestAnimationFrame(drawScene);
     }
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.bindVertexArray(vao);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    //TODO: Make another program which doesnt do any computations but just shows the output (will need to be scaled) and also viewport size will need to be changed to full size
-    //TODO: for computations keep viewport as just width and height but for showing output update viewport size to canvas.width && canvas.height
-    gl.useProgram(displayProgram);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.bindTexture(gl.TEXTURE_2D, targetTexture);
-    gl.uniform1f(pxSizeLocation_display, pxSize);
-    gl.uniform1i(textureLocation_display, 0);
-    // gl.uniform1f(pxSizeLocation, pxSize);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    requestAnimationFrame(drawScene);
 }
 if (gl) {
     getShaders(shaderLocation, {
         vertex: "vert.vs",
-        computeFrag: "frag.fs",
+        computeFrag: "computeFrag.fs",
         displayFrag: "displayFrag.fs"
     }).then(ret => {
         var program = initProgram(gl, ret.vertex, ret.computeFrag);
