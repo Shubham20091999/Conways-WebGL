@@ -12,7 +12,7 @@ vec4 getValueAt(int i, int j) {
 }
 
 float getAliveOrDeadAt(int i, int j) {
-	return float(getValueAt(i, j).r > 0.4);
+	return float(getValueAt(i, j).r > 0.50);
 }
 
 bool approxEqual(float lhs, float rhs) {
@@ -25,8 +25,13 @@ void main() {
 
 	float willBeAlive = float(approxEqual(aliveNeighbourCount, 3.0) || (isAlive > 0.4 && approxEqual(aliveNeighbourCount, 2.0)));
 
-	//For diming effect for newly alive cell
-	willBeAlive *= (isAlive + 0.7);
+	//For diming effect for newly alive cell and newly dead cells
+	//willBeAlive, isAlive
+	//1.0, 1.0 -> 1.8 -> 1.0
+	//1.0, 0.0 -> 0.8
+	//0.0, 1.0 -> 0.3
+	//0.0, 0.0-> -0.7 -> 0.0
+	willBeAlive = willBeAlive*(isAlive + 0.8) + (isAlive-0.8)*(1.0-willBeAlive);
 
 	outColor = vec4(willBeAlive, 0.0, 0.0, 1.0);
 }
