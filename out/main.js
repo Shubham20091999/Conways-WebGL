@@ -78,44 +78,39 @@ function main(gl, computeProgram, displayProgram) {
         gl.uniform1f(pxSizeLocation_display, pxSize);
     }
     //FrameBuffer setup
-    var preTime = Number.NEGATIVE_INFINITY;
-    function drawScene(time) {
-        if ((time - preTime) / 1000 > 0.10) {
-            preTime = time;
-            //Computing next frame
-            {
-                //Use Compute program for computations
-                gl.useProgram(computeProgram);
-                //Viewport will be of small size for computations
-                gl.viewport(0, 0, width, height);
-                //Frame buffer to compute next frame
-                gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-                //setting target texture as the output of frame buffer which will be used to render next frame
-                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, computedTexture, 0);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.drawArrays(gl.TRIANGLES, 0, 6);
-                //Target texture will be created after this
-                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            }
-            //Display computed frame
-            {
-                //Using Display Program
-                gl.useProgram(displayProgram);
-                //Viewport will be full sized
-                gl.viewport(0, 0, canvas.width, canvas.height);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.drawArrays(gl.TRIANGLES, 0, 6);
-            }
-            //Swap
-            {
-                //swaping next frame with previous frame
-                [computedTexture, texture] = [texture, computedTexture];
-                gl.bindTexture(gl.TEXTURE_2D, texture);
-            }
+    function drawScene() {
+        //Computing next frame
+        {
+            //Use Compute program for computations
+            gl.useProgram(computeProgram);
+            //Viewport will be of small size for computations
+            gl.viewport(0, 0, width, height);
+            //Frame buffer to compute next frame
+            gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+            //setting target texture as the output of frame buffer which will be used to render next frame
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, computedTexture, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            //Target texture will be created after this
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
-        requestAnimationFrame(drawScene);
+        //Display computed frame
+        {
+            //Using Display Program
+            gl.useProgram(displayProgram);
+            //Viewport will be full sized
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+        //Swap
+        {
+            //swaping next frame with previous frame
+            [computedTexture, texture] = [texture, computedTexture];
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+        }
     }
-    requestAnimationFrame(drawScene);
+    setInterval(drawScene, 100);
 }
 if (gl) {
     getShaders(shaderLocation, {
