@@ -11,7 +11,7 @@ const width = canvas.width / pxSize;
 const height = canvas.height / pxSize;
 console.log(width, height);
 
-const shaderLocation = "../shaders/";
+const shaderLocation = "shaders/";
 //---------------------------------
 
 function main(gl: WebGL2RenderingContext, computeProgram: WebGLProgram, displayProgram: WebGLProgram) {
