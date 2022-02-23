@@ -1,6 +1,6 @@
 #version 300 es
 
-precision highp float;
+precision lowp float;
 
 uniform sampler2D u_texture;
 uniform vec2 u_size;
@@ -15,14 +15,18 @@ float getAliveOrDeadAt(int i, int j) {
 	return float(getValueAt(i, j).r > 0.4);
 }
 
+bool approxEqual(float lhs, float rhs) {
+	return (lhs > rhs - 0.01) && (lhs < rhs + 0.01);
+}
+
 void main() {
 	float isAlive = getAliveOrDeadAt(0, 0);
 	float aliveNeighbourCount = getAliveOrDeadAt(1, 1) + getAliveOrDeadAt(1, -1) + getAliveOrDeadAt(-1, 1) + getAliveOrDeadAt(-1, -1) + getAliveOrDeadAt(0, 1) + getAliveOrDeadAt(1, 0) + getAliveOrDeadAt(0, -1) + getAliveOrDeadAt(-1, 0);
 
-	float willBeAlive = float((aliveNeighbourCount == 3.0) || (isAlive>0.4 && aliveNeighbourCount == 2.0));
+	float willBeAlive = float(approxEqual(aliveNeighbourCount, 3.0) || (isAlive > 0.4 && approxEqual(aliveNeighbourCount, 2.0)));
 
 	//For diming effect for newly alive cell
-	willBeAlive *= (isAlive+0.7);
+	willBeAlive *= (isAlive + 0.7);
 
-	outColor = vec4(willBeAlive,0.0,0.0,1.0);
+	outColor = vec4(willBeAlive, 0.0, 0.0, 1.0);
 }
