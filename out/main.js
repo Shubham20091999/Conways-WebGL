@@ -8,7 +8,7 @@ canvas.height = Math.floor(window.innerHeight / pxSize) * pxSize;
 const width = canvas.width / pxSize;
 const height = canvas.height / pxSize;
 console.log(width, height);
-const shaderLocation = "../shaders/";
+const shaderLocation = "shaders/";
 //---------------------------------
 function main(gl, computeProgram, displayProgram) {
     const canvas = gl.canvas;
