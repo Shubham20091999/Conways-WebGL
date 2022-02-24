@@ -100,47 +100,47 @@ function main(gl: WebGL2RenderingContext, computeProgram: WebGLProgram, displayP
 		gl.uniform1f(pxSizeLocation_display, pxSize);
 	}
 
-	//FrameBuffer setup
+	//Computing next texture
+	function compute() {
+		//Use Compute program for computations
+		gl.useProgram(computeProgram);
+		//Viewport will be of small size for computations
+		gl.viewport(0, 0, width, height);
+
+		//Frame buffer to compute next frame
+		gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+
+		//setting target texture as the output of frame buffer which will be used to render next frame
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, computedTexture, 0);
+
+		gl.clear(gl.COLOR_BUFFER_BIT);
+
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+		//Target texture will be created after this
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	}
+
+	//Displaying  texture
+	function display() {
+		//Using Display Program
+		gl.useProgram(displayProgram);
+		//Viewport will be full sized
+		gl.viewport(0, 0, canvas.width, canvas.height);
+
+		gl.clear(gl.COLOR_BUFFER_BIT);
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
+	}
 
 	function drawScene() {
-		//Computing next frame
-		{
-			//Use Compute program for computations
-			gl.useProgram(computeProgram);
-			//Viewport will be of small size for computations
-			gl.viewport(0, 0, width, height);
-
-			//Frame buffer to compute next frame
-			gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-
-			//setting target texture as the output of frame buffer which will be used to render next frame
-			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, computedTexture, 0);
-
-			gl.clear(gl.COLOR_BUFFER_BIT);
-
-			gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-			//Target texture will be created after this
-			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		}
-
-		//Display computed frame
-		{
-			//Using Display Program
-			gl.useProgram(displayProgram);
-			//Viewport will be full sized
-			gl.viewport(0, 0, canvas.width, canvas.height);
-
-			gl.clear(gl.COLOR_BUFFER_BIT);
-			gl.drawArrays(gl.TRIANGLES, 0, 6);
-		}
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		
+		display();
+		compute();
 
 		//Swap
-		{
-			//swaping next frame with previous frame
-			[computedTexture, texture] = [texture, computedTexture];
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-		}
+		//Display computed texture in next draw call
+		[computedTexture, texture] = [texture, computedTexture];
 	}
 	setInterval(drawScene, 100);
 }
