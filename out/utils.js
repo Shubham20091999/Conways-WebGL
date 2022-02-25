@@ -7,21 +7,19 @@ async function getShaders(baseLocation, list) {
     }
     return ret;
 }
-function initProgram(gl, vertexShaderSource, fragmentShaderSource) {
-    function createShader(gl, type, source) {
-        var shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-        if (success) {
-            return shader;
-        }
-        console.log(gl.getShaderInfoLog(shader));
-        gl.deleteShader(shader);
-        throw "Shader with type[" + type + "] could not be initialized";
+function createShader(gl, type, source) {
+    var shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    if (success) {
+        return shader;
     }
-    var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    console.log(gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    throw "Shader with type[" + type + "] could not be initialized";
+}
+function initProgram(gl, vertexShader, fragmentShader) {
     var program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
