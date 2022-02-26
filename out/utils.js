@@ -32,6 +32,10 @@ function initProgram(gl, vertexShader, fragmentShader) {
     gl.deleteProgram(program);
     throw "Program could not be initialized";
 }
+function updateTexture(gl, size, data, texture) {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, size.w, size.h, 0, gl.RED, gl.UNSIGNED_BYTE, data);
+}
 function createTexture(gl, size, data) {
     var texture = gl.createTexture();
     {

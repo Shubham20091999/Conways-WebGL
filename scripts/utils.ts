@@ -36,6 +36,11 @@ function initProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, frag
     throw "Program could not be initialized";
 }
 
+function updateTexture(gl: WebGL2RenderingContext, size: Conways.size, data: Uint8Array | null, texture: WebGLTexture) {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, size.w, size.h, 0, gl.RED, gl.UNSIGNED_BYTE, data);
+}
+
 function createTexture(gl: WebGL2RenderingContext, size: Conways.size, data: Uint8Array | null): WebGLTexture {
     var texture = gl.createTexture()!;
     {
