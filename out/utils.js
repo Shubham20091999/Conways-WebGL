@@ -32,11 +32,25 @@ function initProgram(gl, vertexShader, fragmentShader) {
     gl.deleteProgram(program);
     throw "Program could not be initialized";
 }
+function createTexture(gl, size, data) {
+    var texture = gl.createTexture();
+    {
+        gl.activeTexture(gl.TEXTURE0 + 0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, size.w, size.h, 0, gl.RED, gl.UNSIGNED_BYTE, data);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    }
+    return texture;
+}
+//----------------------------------------
 function getRandomBitArray(size) {
     return Array.from({ length: size }, () => (Number(Math.random() > 0.90) * 255));
 }
 //Debug=========================
-function getTextureData(GL, texture) {
+function getTextureData(GL, texture, width, height) {
     var fb = GL.createFramebuffer();
     GL.bindFramebuffer(GL.FRAMEBUFFER, fb);
     GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, texture, 0);
