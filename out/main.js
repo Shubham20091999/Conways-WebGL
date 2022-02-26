@@ -25,11 +25,19 @@ class Conways {
                 w: gl.canvas.width,
             }
         };
-        this.pxArray = new Array(this.size.compute.h * this.size.compute.w);
+        // this.pxArray = new Uint8Array(this.size.compute.h * this.size.compute.w);
+        this.pxArray = getRandomBitArray(this.size.compute.h * this.size.compute.w);
         this.textures = this.initialize();
         this.framebuffer = gl.createFramebuffer();
         // this.display();
-        this.isPaused = true;
+        this.isPaused = false;
+        this.setupEventListeners();
+    }
+    setupEventListeners() {
+        if ((navigator.maxTouchPoints || 'ontouchstart' in document.documentElement)) {
+            return;
+        }
+        // this.isPaused = true;
         document.addEventListener("mousemove", function (event) {
             if (event.buttons > 0) {
                 conways.addPx(event.clientX, event.clientY);
@@ -38,12 +46,18 @@ class Conways {
         document.addEventListener('contextmenu', function (e) {
             e.preventDefault();
         }, false);
-        document.addEventListener("keydown", function (e) {
+        document.addEventListener("keydown", (e) => {
             if (e.key == " ") {
-                conways.isPaused = !conways.isPaused;
+                this.playPause();
                 e.preventDefault();
             }
         });
+    }
+    playPause() {
+        this.isPaused = !this.isPaused;
+        if (this.isPaused) {
+            this.pxArray = getTextureData(this.gl, this.textures.compute, this.size.compute);
+        }
     }
     addPx(x, y) {
         if (!this.isPaused) {
@@ -52,7 +66,7 @@ class Conways {
         x = Math.floor(x / this.pxSize);
         y = y / this.pxSize;
         this.pxArray[(x + Math.floor(this.size.compute.h - y) * this.size.compute.w)] = 255.0;
-        updateTexture(this.gl, this.size.compute, new Uint8Array(this.pxArray), this.textures.display);
+        updateTexture(this.gl, this.size.compute, this.pxArray, this.textures.display);
         this.display();
     }
     initialize() {

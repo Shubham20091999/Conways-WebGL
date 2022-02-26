@@ -51,19 +51,21 @@ function createTexture(gl, size, data) {
 }
 //----------------------------------------
 function getRandomBitArray(size) {
-    return Array.from({ length: size }, () => (Number(Math.random() > 0.90) * 255));
+    return Uint8Array.from({ length: size }, () => (Number(Math.random() > 0.90) * 255));
 }
 //Debug=========================
-function getTextureData(GL, texture, width, height) {
+function getTextureData(GL, texture, size) {
     var fb = GL.createFramebuffer();
     GL.bindFramebuffer(GL.FRAMEBUFFER, fb);
     GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, texture, 0);
-    var pixels = new Uint8Array(width * height * 4);
+    var pixels = new Uint8Array(size.w * size.h * 4);
+    let ret = null;
     if (GL.checkFramebufferStatus(GL.FRAMEBUFFER) == GL.FRAMEBUFFER_COMPLETE) {
-        GL.readPixels(0, 0, width, height, GL.RGBA, GL.UNSIGNED_BYTE, pixels);
-        console.log(pixels);
-        console.log(pixels.filter((value, index, self) => self.indexOf(value) === index));
+        GL.readPixels(0, 0, size.w, size.h, GL.RGBA, GL.UNSIGNED_BYTE, pixels);
+        ret = pixels.filter(function (value, index, arr) {
+            return index % 4 == 0;
+        });
     }
     GL.deleteFramebuffer(fb);
-    return pixels;
+    return ret;
 }
