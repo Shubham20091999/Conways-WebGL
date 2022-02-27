@@ -70,18 +70,29 @@ class Conways {
 			return;
 		}
 		// this.isPaused = true;
-		document.addEventListener("mousemove", function (event) {
+		document.addEventListener("mousemove", (event) => {
 			if (event.buttons > 0) {
 				conways.addPx(event.clientX, event.clientY);
 			}
 		});
-		document.addEventListener('contextmenu', function (e) {
-			e.preventDefault();
+		document.addEventListener('contextmenu', (event) => {
+			event.preventDefault();
 		}, false);
-		document.addEventListener("keydown", (e) => {
-			if (e.key == " ") {
+		document.addEventListener("keydown", (event) => {
+			if (event.key == " ") {
 				this.playPause();
-				e.preventDefault();
+				event.preventDefault();
+			}
+			if (event.altKey && event.key == "c") {
+				this.pxArray = new Uint8Array(this.size.compute.h * this.size.compute.w);
+				updateTexture(this.gl, this.size.compute, this.pxArray, this.textures.compute);
+				this.display();
+				if (!this.isPaused)
+					this.playPause();
+			}
+			if (event.altKey && event.key == "r") {
+				this.pxArray = getRandomBitArray(this.size.compute.h * this.size.compute.w);
+				updateTexture(this.gl, this.size.compute, this.pxArray, this.textures.display);
 			}
 		});
 	}
