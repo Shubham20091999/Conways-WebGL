@@ -52,14 +52,12 @@ class Conways {
 				w: gl.canvas.width,
 			}
 		};
-		// this.pxArray = new Uint8Array(this.size.compute.h * this.size.compute.w);
 		this.pxArray = getRandomBitArray(this.size.compute.h * this.size.compute.w);
 
 		this.textures = this.initialize();
 
 		this.framebuffer = gl.createFramebuffer()!;
 
-		// this.display();
 		this.isPaused = false;
 
 		this.setupEventListeners();

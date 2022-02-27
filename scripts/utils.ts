@@ -62,7 +62,6 @@ function getRandomBitArray(size: number) {
     return Uint8Array.from({ length: size }, () => (Number(Math.random() > 0.90) * 255));
 }
 
-
 //Debug=========================
 function getTextureData(GL: WebGL2RenderingContext, texture: WebGLTexture, size: Conways.size): Uint8Array | null {
     var fb = GL.createFramebuffer();
