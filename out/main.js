@@ -6,7 +6,6 @@ canvas.width = Math.floor(window.innerWidth / pxSize) * pxSize;
 canvas.height = Math.floor(window.innerHeight / pxSize) * pxSize;
 const gl = canvas.getContext("webgl2");
 const shaderLocation = "shaders/";
-let conways;
 class Conways {
     constructor(gl, pxSize, computeProgram, displayProgram) {
         this.gl = gl;
@@ -44,16 +43,12 @@ class Conways {
         document.addEventListener("mousemove", (event) => {
             if (event.buttons > 0) {
                 if (this.isPaused) {
-                    conways.addPx(event.clientX, event.clientY);
+                    this.addPx(event.clientX, event.clientY);
                 }
                 else {
-                    this.shift = {
-                        h: this.shift.h + event.movementX,
-                        w: this.shift.w + event.movementY
-                    };
+                    this.shift_canvas(event.movementX, event.movementY);
                 }
             }
-            // console.log(event);
         });
         document.addEventListener('contextmenu', (event) => {
             event.preventDefault();
@@ -91,6 +86,12 @@ class Conways {
         this.pxArray[((x) + Math.floor(this.size.compute.h - y) * this.size.compute.w)] = 255.0;
         updateTexture(this.gl, this.size.compute, this.pxArray, this.textures.display);
         this.display();
+    }
+    shift_canvas(x, y) {
+        this.shift = {
+            h: this.shift.h + x,
+            w: this.shift.w + y,
+        };
     }
     initialize() {
         let gl = this.gl;
@@ -199,7 +200,7 @@ if (gl) {
         let displayFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, ret.displayFrag);
         var computeProgram = initProgram(gl, vertexShader, computeFragmentShader);
         var displayProgram = initProgram(gl, vertexShader, displayFragmentShader);
-        conways = new Conways(gl, pxSize, computeProgram, displayProgram);
+        let conways = new Conways(gl, pxSize, computeProgram, displayProgram);
         setInterval(() => conways.drawScene(), 100);
     });
 }

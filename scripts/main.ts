@@ -10,7 +10,6 @@ const gl = canvas.getContext("webgl2");
 
 const shaderLocation = "shaders/";
 
-let conways: Conways;
 //---------------------------------
 namespace Conways {
 	export interface program<T> {
@@ -77,18 +76,13 @@ class Conways {
 		// this.isPaused = true;
 		document.addEventListener("mousemove", (event) => {
 			if (event.buttons > 0) {
-
 				if (this.isPaused) {
-					conways.addPx(event.clientX, event.clientY);
+					this.addPx(event.clientX, event.clientY);
 				}
 				else {
-					this.shift = <Conways.size>{
-						h: this.shift.h + event.movementX,
-						w: this.shift.w + event.movementY
-					}
+					this.shift_canvas(event.movementX, event.movementY);
 				}
 			}
-			// console.log(event);
 		});
 		document.addEventListener('contextmenu', (event) => {
 			event.preventDefault();
@@ -132,6 +126,12 @@ class Conways {
 		this.display();
 	}
 
+	shift_canvas(x: number, y: number) {
+		this.shift = <Conways.size>{
+			h: this.shift.h + x,
+			w: this.shift.w + y,
+		}
+	}
 	initialize(): Conways.program<WebGLTexture> {
 		let gl = this.gl;
 		var vao = gl.createVertexArray();
@@ -269,7 +269,7 @@ if (gl) {
 		var computeProgram = initProgram(gl, vertexShader, computeFragmentShader);
 		var displayProgram = initProgram(gl, vertexShader, displayFragmentShader);
 
-		conways = new Conways(gl, pxSize, computeProgram, displayProgram);
+		let conways = new Conways(gl, pxSize, computeProgram, displayProgram);
 
 		setInterval(() => conways.drawScene(), 100);
 	});
