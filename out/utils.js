@@ -53,6 +53,9 @@ function createTexture(gl, size, data) {
 function getRandomBitArray(size) {
     return Uint8Array.from({ length: size }, () => (Number(Math.random() > 0.90) * 255));
 }
+function mod(a, b) {
+    return a - Math.floor(a / b) * b;
+}
 //Debug=========================
 function getTextureData(GL, texture, size) {
     var fb = GL.createFramebuffer();

@@ -29,6 +29,11 @@ class Conways {
         this.textures = this.initialize();
         this.framebuffer = gl.createFramebuffer();
         this.isPaused = false;
+        this.shift_location = gl.getUniformLocation(this.program.display, "u_shift");
+        this.shift = {
+            h: 0,
+            w: 0
+        };
         this.setupEventListeners();
     }
     setupEventListeners() {
@@ -38,8 +43,17 @@ class Conways {
         // this.isPaused = true;
         document.addEventListener("mousemove", (event) => {
             if (event.buttons > 0) {
-                conways.addPx(event.clientX, event.clientY);
+                if (this.isPaused) {
+                    conways.addPx(event.clientX, event.clientY);
+                }
+                else {
+                    this.shift = {
+                        h: this.shift.h + event.movementX,
+                        w: this.shift.w + event.movementY
+                    };
+                }
             }
+            // console.log(event);
         });
         document.addEventListener('contextmenu', (event) => {
             event.preventDefault();
@@ -72,9 +86,9 @@ class Conways {
         if (!this.isPaused) {
             return;
         }
-        x = Math.floor(x / this.pxSize);
-        y = y / this.pxSize;
-        this.pxArray[(x + Math.floor(this.size.compute.h - y) * this.size.compute.w)] = 255.0;
+        x = Math.floor(mod(x - this.shift.h, this.size.display.w) / this.pxSize);
+        y = (mod(y - this.shift.w, this.size.display.h)) / this.pxSize;
+        this.pxArray[((x) + Math.floor(this.size.compute.h - y) * this.size.compute.w)] = 255.0;
         updateTexture(this.gl, this.size.compute, this.pxArray, this.textures.display);
         this.display();
     }
@@ -115,6 +129,7 @@ class Conways {
         const pxSizeLocation_display = gl.getUniformLocation(this.program.display, "u_px_size");
         //Size(width+height) setup (used for texture repeat on the edge of texture (check compute fragment shader for this))
         const sizeLocation = gl.getUniformLocation(this.program.compute, "u_size");
+        const sizeLocation_display = gl.getUniformLocation(this.program.display, "u_size");
         //Compute setup
         gl.useProgram(this.program.compute);
         {
@@ -126,6 +141,7 @@ class Conways {
         {
             gl.uniform1i(textureLocation_display, 0);
             gl.uniform1f(pxSizeLocation_display, this.pxSize);
+            gl.uniform2f(sizeLocation_display, this.size.compute.w, this.size.compute.h);
         }
         return {
             compute: computedTexture,
@@ -155,6 +171,7 @@ class Conways {
         gl.useProgram(this.program.display);
         //Viewport will be full sized
         gl.viewport(0, 0, this.size.display.w, this.size.display.h);
+        this.gl.uniform2f(this.shift_location, -this.shift.h, this.shift.w);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }

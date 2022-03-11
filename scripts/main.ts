@@ -32,7 +32,8 @@ class Conways {
 	framebuffer: WebGLFramebuffer;
 	pxArray: Uint8Array;
 	isPaused: boolean;
-
+	shift: Conways.size;
+	shift_location: WebGLUniformLocation;
 	constructor(gl: WebGL2RenderingContext, pxSize: number, computeProgram: WebGLProgram, displayProgram: WebGLProgram) {
 		this.gl = gl;
 
@@ -60,6 +61,12 @@ class Conways {
 
 		this.isPaused = false;
 
+		this.shift_location = gl.getUniformLocation(this.program.display, "u_shift")!;
+		this.shift = <Conways.size>{
+			h: 0,
+			w: 0
+		};
+
 		this.setupEventListeners();
 	}
 
@@ -70,8 +77,18 @@ class Conways {
 		// this.isPaused = true;
 		document.addEventListener("mousemove", (event) => {
 			if (event.buttons > 0) {
-				conways.addPx(event.clientX, event.clientY);
+
+				if (this.isPaused) {
+					conways.addPx(event.clientX, event.clientY);
+				}
+				else {
+					this.shift = <Conways.size>{
+						h: this.shift.h + event.movementX,
+						w: this.shift.w + event.movementY
+					}
+				}
 			}
+			// console.log(event);
 		});
 		document.addEventListener('contextmenu', (event) => {
 			event.preventDefault();
@@ -106,9 +123,10 @@ class Conways {
 		if (!this.isPaused) {
 			return;
 		}
-		x = Math.floor(x / this.pxSize);
-		y = y / this.pxSize;
-		this.pxArray[(x + Math.floor(this.size.compute.h - y) * this.size.compute.w)] = 255.0;
+		x = Math.floor(mod(x - this.shift.h, this.size.display.w) / this.pxSize);
+		y = (mod(y - this.shift.w, this.size.display.h)) / this.pxSize;
+
+		this.pxArray[((x) + Math.floor(this.size.compute.h - y) * this.size.compute.w)] = 255.0;
 
 		updateTexture(this.gl, this.size.compute, this.pxArray, this.textures.display);
 		this.display();
@@ -162,6 +180,9 @@ class Conways {
 		//Size(width+height) setup (used for texture repeat on the edge of texture (check compute fragment shader for this))
 		const sizeLocation = gl.getUniformLocation(this.program.compute, "u_size");
 
+		const sizeLocation_display = gl.getUniformLocation(this.program.display, "u_size");
+
+
 		//Compute setup
 		gl.useProgram(this.program.compute);
 		{
@@ -174,6 +195,7 @@ class Conways {
 		{
 			gl.uniform1i(textureLocation_display, 0);
 			gl.uniform1f(pxSizeLocation_display, this.pxSize);
+			gl.uniform2f(sizeLocation_display, this.size.compute.w, this.size.compute.h);
 		}
 
 		return <Conways.program<WebGLTexture>>{
@@ -212,6 +234,8 @@ class Conways {
 		gl.useProgram(this.program.display);
 		//Viewport will be full sized
 		gl.viewport(0, 0, this.size.display.w, this.size.display.h);
+
+		this.gl.uniform2f(this.shift_location, -this.shift.h, this.shift.w);
 
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
